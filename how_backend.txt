@@ -1,0 +1,46 @@
+in terminal run
+New-Item api\health.py -ItemType File
+New-Item core\config.py -ItemType File
+New-Item core\__init__.py -ItemType File
+New-Item main.py -ItemType File
+New-Item .env -ItemType File
+
+open core\config.py
+import os
+from dotenv import load_dotenv
+
+load_dotenv()
+
+class Settings:
+    APP_NAME = os.getenv("APP_NAME")
+    APP_VERSION = os.getenv("APP_VERSION")
+    ENV = os.getenv("ENV")
+
+settings = Settings()
+
+open api\health.py
+from fastapi import APIRouter
+from core.config import settings
+
+router = APIRouter()
+
+@router.get("/health")
+def health():
+    return {"status": "alive", "environment": settings.ENV}
+
+@router.get("/version")
+def version():
+    return {"app": settings.APP_NAME, "version": settings.APP_VERSION}
+
+open api/routes.py update the requirements
+from fastapi import APIRouter
+from api.health import router as health_router
+
+router = APIRouter()
+router.include_router(health_router)
+
+open main.py
+import uvicorn
+
+if __name__ == "__main__":
+    uvicorn.run("api.app:app", host="127.0.0.1", port=8000, reload=True)
