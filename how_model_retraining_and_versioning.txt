@@ -1,0 +1,127 @@
+in the terminal
+mkdir model_store, training
+
+New-Item training\retrain.py -ItemType File
+New-Item api\model_routes.py -ItemType File
+New-Item model_store\registry.json -ItemType File
+
+open model_store\registry.json
+
+{
+  "active_model": "v1.pkl",
+  "history": []
+}
+
+open training/retrain.py
+
+import json
+import joblib
+from datetime import datetime
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score
+from utils.preprocess import load_and_prepare
+
+X_train, X_test, y_train, y_test = load_and_prepare("data/raw/student_data.csv")
+
+model = RandomForestClassifier(
+    n_estimators=300,
+    max_depth=10,
+    random_state=42
+)
+
+model.fit(X_train, y_train)
+acc = accuracy_score(y_test, model.predict(X_test))
+
+with open("model_store/registry.json", "r") as f:
+    registry = json.load(f)
+
+version = f"v{len(registry['history']) + 2}.pkl"
+joblib.dump(model, f"model_store/{version}")
+
+registry["history"].append({
+    "version": version,
+    "accuracy": round(acc, 3),
+    "trained_at": datetime.utcnow().isoformat()
+})
+
+registry["active_model"] = version
+
+with open("model_store/registry.json", "w") as f:
+    json.dump(registry, f, indent=2)
+
+print("New model trained:", version)
+
+
+Update model/predictor.py
+
+import json
+import joblib
+import numpy as np
+
+REGISTRY_PATH = "model_store/registry.json"
+SCALER_PATH = "model/scaler.pkl"
+
+_model = None
+_scaler = None
+
+def load_active_model():
+    with open(REGISTRY_PATH) as f:
+        registry = json.load(f)
+    return joblib.load(f"model_store/{registry['active_model']}")
+
+def get_model():
+    global _model
+    if _model is None:
+        _model = load_active_model()
+    return _model
+
+def get_scaler():
+    global _scaler
+    if _scaler is None:
+        _scaler = joblib.load(SCALER_PATH)
+    return _scaler
+
+def predict(input_data):
+    data = np.array(input_data, dtype=float).reshape(1, -1)
+
+    scaler = get_scaler()
+    model = get_model()
+
+    data_scaled = scaler.transform(data)
+
+    probs = model.predict_proba(data_scaled)[0]
+    prediction = int(probs.argmax())
+    confidence = float(probs[prediction])
+
+    return prediction, confidence
+
+
+if __name__ == "__main__":
+    sample = [85, 78, 80, 5.0, 0, 3]
+    pred, conf = predict(sample)
+    print(f"Predicted risk_level: {pred}, confidence: {conf:.3f}")
+
+
+open api/model_routes.py
+
+from fastapi import APIRouter, Depends
+from auth.security import admin_only
+import json
+import subprocess
+
+router = APIRouter(prefix="/model")
+
+@router.post("/retrain")
+def retrain(user=Depends(admin_only)):
+    subprocess.run(["python", "training/retrain.py"])
+    return {"status": "retrained"}
+
+@router.get("/status")
+def status(user=Depends(admin_only)):
+    with open("model_store/registry.json") as f:
+        return json.load(f)
+
+
+Update api/routes.py
+from api.model_routes import router as model_router
+router.include_router(model_router)

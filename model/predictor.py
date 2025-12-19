@@ -1,33 +1,35 @@
+import json
 import joblib
 import numpy as np
 
-MODEL_PATH = "model/paths_model.pkl"
+REGISTRY_PATH = "model_store/registry.json"
 SCALER_PATH = "model/scaler.pkl"
 
-model = joblib.load(MODEL_PATH)
-scaler = joblib.load(SCALER_PATH)
-
 _model = None
+_scaler = None
+
+def load_active_model():
+    with open(REGISTRY_PATH) as f:
+        registry = json.load(f)
+    return joblib.load(f"model_store/{registry['active_model']}")
 
 def get_model():
     global _model
     if _model is None:
-        _model = joblib.load("model/paths_model.pkl")
+        _model = load_active_model()
     return _model
 
+def get_scaler():
+    global _scaler
+    if _scaler is None:
+        _scaler = joblib.load(SCALER_PATH)
+    return _scaler
+
 def predict(input_data):
-    """
-    input_data: list or array in the SAME order as training features:
-        [
-            attendance,
-            internal_marks,
-            assignments,
-            study_hours,
-            backlog_count,
-            stress_level
-        ]
-    """
     data = np.array(input_data, dtype=float).reshape(1, -1)
+
+    scaler = get_scaler()
+    model = get_model()
 
     data_scaled = scaler.transform(data)
 
