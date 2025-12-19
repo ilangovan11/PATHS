@@ -1,0 +1,31 @@
+body {
+  background: #0f1115;
+  color: #e6e6e6;
+  font-family: sans-serif;
+}
+
+.center, .page {
+  max-width: 400px;
+  margin: auto;
+  padding: 40px;
+}
+
+input, button {
+  width: 100%;
+  margin: 8px 0;
+  padding: 10px;
+  background: #1c1f26;
+  color: white;
+  border: none;
+}
+
+button {
+  background: #7a1f1f;
+  cursor: pointer;
+}
+
+.card {
+  margin-top: 20px;
+  padding: 20px;
+  background: #1a1d23;
+}
