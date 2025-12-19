@@ -7,6 +7,13 @@ SCALER_PATH = "model/scaler.pkl"
 model = joblib.load(MODEL_PATH)
 scaler = joblib.load(SCALER_PATH)
 
+_model = None
+
+def get_model():
+    global _model
+    if _model is None:
+        _model = joblib.load("model/paths_model.pkl")
+    return _model
 
 def predict(input_data):
     """
