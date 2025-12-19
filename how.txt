@@ -1,0 +1,317 @@
+Phase 1
+
+mkdir PATHS
+cd PATHS
+
+mkdir data, data/raw, data/processed, model, engine, api, utils
+
+New-Item data\raw\student_data.csv -ItemType File
+New-Item data\raw\generate_data.py -ItemType File
+New-Item data\processed\processed.csv -ItemType File
+New-Item model\trainer.py -ItemType File
+New-Item model\predictor.py -ItemType File
+New-Item engine\decision.py -ItemType File
+New-Item engine\paths_logic.py -ItemType File
+New-Item api\app.py -ItemType File
+New-Item api\routes.py -ItemType File
+New-Item utils\preprocess.py -ItemType File
+New-Item utils\metrics.py -ItemType File
+New-Item utils\__init__.py -ItemType File
+New-Item model\__init__.py -ItemType File
+New-Item engine\__init__.py -ItemType File
+New-Item api\__init__.py -ItemType File
+
+then create the virtual environment
+
+python -m venv venv
+venv\Scripts\activate
+
+create a requirements.txt File
+numpy
+pandas
+scikit-learn
+matplotlib
+fastapi
+uvicorn
+
+then in the terminal run pip install -r requirements.txt
+
+to generate datas open data/raw/generate_data.py
+
+import numpy as np
+import pandas as pd
+import random
+from pathlib import Path
+
+np.random.seed(42)
+random.seed(42)
+
+OUTPUT_PATH = Path("data/raw/student_data.csv")
+OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
+
+rows = 500
+data = []
+
+
+def gen_advance():
+    return {
+        "attendance": np.random.randint(75, 95),
+        "internal_marks": np.random.randint(70, 90),
+        "assignments": np.random.randint(65, 95),
+        "study_hours": np.random.uniform(4, 8),
+        "backlog_count": np.random.randint(0, 2),
+        "stress_level": np.random.randint(1, 5),
+        "risk_level": 0,
+    }
+
+def gen_hold():
+    return {
+        "attendance": np.random.randint(60, 80),
+        "internal_marks": np.random.randint(55, 75),
+        "assignments": np.random.randint(55, 75),
+        "study_hours": np.random.uniform(2.5, 5),
+        "backlog_count": np.random.randint(1, 4),
+        "stress_level": np.random.randint(4, 7),
+        "risk_level": 1,
+    }
+
+def gen_retreat():
+    return {
+        "attendance": np.random.randint(40, 65),
+        "internal_marks": np.random.randint(35, 60),
+        "assignments": np.random.randint(30, 60),
+        "study_hours": np.random.uniform(0.5, 3),
+        "backlog_count": np.random.randint(3, 8),
+        "stress_level": np.random.randint(6, 10),
+        "risk_level": 2,
+    }
+
+advance_count = int(rows * 0.28)
+hold_count = int(rows * 0.42)
+retreat_count = rows - advance_count - hold_count
+
+for _ in range(advance_count):
+    data.append(gen_advance())
+
+for _ in range(hold_count):
+    data.append(gen_hold())
+
+for _ in range(retreat_count):
+    data.append(gen_retreat())
+
+for row in data:
+    if random.random() < 0.05:
+        row["risk_level"] = random.choice([0, 1, 2])
+
+df = pd.DataFrame(data)
+df = df.sample(frac=1, random_state=42).reset_index(drop=True)
+
+df.to_csv(OUTPUT_PATH, index=False)
+print(f"Stratified dataset generated at {OUTPUT_PATH.resolve()}")
+
+then run in the terminal
+python data/raw/generate_data.py
+
+then the student_data.csv is generated
+
+then in utils/preprocess.py
+
+import pandas as pd
+import joblib
+from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import StandardScaler
+
+
+def load_and_prepare(path: str, test_size: float = 0.2, random_state: int = 42):
+    df = pd.read_csv(path)
+
+    X = df.drop("risk_level", axis=1)
+    y = df["risk_level"]
+
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=test_size, random_state=random_state, stratify=y
+    )
+
+    scaler = StandardScaler()
+    X_train_scaled = scaler.fit_transform(X_train)
+    X_test_scaled = scaler.transform(X_test)
+
+    joblib.dump(scaler, "model/scaler.pkl")
+
+    return X_train_scaled, X_test_scaled, y_train, y_test
+
+Phase 2
+
+open model/trainer.py
+
+import joblib
+from sklearn.ensemble import RandomForestClassifier
+from sklearn.metrics import accuracy_score, classification_report
+from utils.preprocess import load_and_prepare
+
+DATA_PATH = "data/raw/student_data.csv"
+MODEL_PATH = "model/paths_model.pkl"
+
+def main():
+    X_train, X_test, y_train, y_test = load_and_prepare(DATA_PATH)
+
+    model = RandomForestClassifier(
+        n_estimators=200,
+        class_weight={0: 2.5, 1: 1.0, 2: 1.2},
+        max_depth=8,
+        random_state=42,
+        n_jobs=-1,
+    )
+
+    model.fit(X_train, y_train)
+
+    preds = model.predict(X_test)
+    print("Accuracy:", accuracy_score(y_test, preds))
+    print("\nClassification report:\n")
+    print(classification_report(y_test, preds))
+
+    joblib.dump(model, MODEL_PATH)
+    print(f"\nModel saved to {MODEL_PATH}")
+
+
+if __name__ == "__main__":
+    main()
+
+then run python -m model.trainer
+in the terminal
+
+open model/predictor.py
+import joblib
+import numpy as np
+
+MODEL_PATH = "model/paths_model.pkl"
+SCALER_PATH = "model/scaler.pkl"
+
+model = joblib.load(MODEL_PATH)
+scaler = joblib.load(SCALER_PATH)
+
+
+def predict(input_data):
+    """
+    input_data: list or array in the SAME order as training features:
+        [
+            attendance,
+            internal_marks,
+            assignments,
+            study_hours,
+            backlog_count,
+            stress_level
+        ]
+    """
+    data = np.array(input_data, dtype=float).reshape(1, -1)
+
+    data_scaled = scaler.transform(data)
+
+    probs = model.predict_proba(data_scaled)[0]
+    prediction = int(probs.argmax())
+    confidence = float(probs[prediction])
+
+    return prediction, confidence
+
+
+if __name__ == "__main__":
+    sample = [85, 78, 80, 5.0, 0, 3]
+    pred, conf = predict(sample)
+    print(f"Predicted risk_level: {pred}, confidence: {conf:.3f}")
+
+you should get output like this
+(0, 0.91)
+
+open engine/paths_logic.py
+
+def resolve_action(prediction, confidence, raw_input):
+    attendance, marks, assignments, study_hours, backlogs, stress = raw_input
+
+    if attendance < 50 or (backlogs >= 5 and stress >= 8):
+        return "RETREAT", "Critical risk detected by rule override"
+
+    if confidence < 0.6:
+        return "HOLD", "Low confidence in prediction"
+
+    if prediction == 0:
+        return "ADVANCE", "Performance indicators are stable"
+
+    if prediction == 1:
+        return "HOLD", "Moderate risk requires monitoring"
+
+    return "RETREAT", "High risk predicted by model"
+
+open engine/decision.py
+
+from model.predictor import predict
+from engine.paths_logic import resolve_action
+
+LABEL_MAP = {
+    0: "ADVANCE",
+    1: "HOLD",
+    2: "RETREAT"
+}
+
+def coordinate(raw_input):
+    prediction, confidence = predict(raw_input)
+    action, reason = resolve_action(prediction, confidence, raw_input)
+
+    return {
+        "prediction": LABEL_MAP[prediction],
+        "action": action,
+        "confidence": round(confidence, 2),
+        "reason": reason
+    }
+
+then again in the terminal with python run 
+from engine.decision import coordinate
+
+student = [45, 70, 65, 3.5, 6, 9]
+print(coordinate(student))
+
+you should get output like this
+{
+  "prediction": "RETREAT",
+  "action": "RETREAT",
+  "confidence": 0.87,
+  "reason": "Critical risk detected by rule override"
+}
+
+open api/app.py
+from fastapi import FastAPI
+from api.routes import router
+
+app = FastAPI(title="PATHS: The Coordinate Engine")
+
+app.include_router(router)
+
+open api/routes.py
+from fastapi import APIRouter
+from pydantic import BaseModel
+from engine.decision import coordinate
+
+router = APIRouter()
+
+class StudentInput(BaseModel):
+    attendance: int
+    internal_marks: int
+    assignments: int
+    study_hours: float
+    backlog_count: int
+    stress_level: int
+
+@router.post("/coordinate")
+def run_coordinate(data: StudentInput):
+    raw_input = [
+        data.attendance,
+        data.internal_marks,
+        data.assignments,
+        data.study_hours,
+        data.backlog_count,
+        data.stress_level
+    ]
+    return coordinate(raw_input)
+
+
+then run uvicorn api.app:app --reload
+in the terminal with the root directory
