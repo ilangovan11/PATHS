@@ -3,7 +3,7 @@ Phase 1
 mkdir PATHS
 cd PATHS
 
-mkdir data, data/raw, data/processed, model, engine, api, utils, core, auth
+mkdir data, data/raw, data/processed, model, engine, api, utils, core, auth, db
 
 New-Item data\raw\student_data.csv -ItemType File
 New-Item data\raw\generate_data.py -ItemType File

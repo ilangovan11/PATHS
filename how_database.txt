@@ -1,0 +1,205 @@
+open terminal and run in the main path
+
+New-Item db\database.py -ItemType File
+New-Item db\models.py -ItemType File
+New-Item api\decision_routes.py -ItemType File
+
+open db\database.py
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker, declarative_base
+
+DATABASE_URL = "sqlite:///./paths.db"
+
+engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
+SessionLocal = sessionmaker(bind=engine)
+Base = declarative_base()
+
+open db\models.py
+from sqlalchemy import Column, Integer, Float, String
+from db.database import Base
+
+class DecisionLog(Base):
+    __tablename__ = "decision_logs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    attendance = Column(Integer)
+    internal_marks = Column(Integer)
+    assignments = Column(Integer)
+    study_hours = Column(Float)
+    backlog_count = Column(Integer)
+    stress_level = Column(Integer)
+
+    prediction = Column(String)
+    action = Column(String)
+    confidence = Column(Float)
+    reason = Column(String)
+    triggered_by = Column(String)
+
+open main.py update 
+from api.app import app
+from db.database import engine
+from db.models import Base
+import uvicorn
+
+Base.metadata.create_all(bind=engine)
+
+if __name__ == "__main__":
+    uvicorn.run("api.app:app", host="127.0.0.1", port=8000, reload=True)
+
+open api\decision_routes.py
+from fastapi import APIRouter, Depends
+from sqlalchemy.orm import Session
+from engine.decision import coordinate
+from auth.security import admin_only
+from db.database import SessionLocal
+from db.models import DecisionLog
+from pydantic import BaseModel
+
+router = APIRouter()
+
+class StudentInput(BaseModel):
+    attendance: int
+    internal_marks: int
+    assignments: int
+    study_hours: float
+    backlog_count: int
+    stress_level: int
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+@router.post("/coordinate")
+def run_coordinate(data: StudentInput, user=Depends(admin_only), db: Session = Depends(get_db)):
+    raw = [
+        data.attendance,
+        data.internal_marks,
+        data.assignments,
+        data.study_hours,
+        data.backlog_count,
+        data.stress_level
+    ]
+
+    result = coordinate(raw)
+
+    log = DecisionLog(
+        attendance=data.attendance,
+        internal_marks=data.internal_marks,
+        assignments=data.assignments,
+        study_hours=data.study_hours,
+        backlog_count=data.backlog_count,
+        stress_level=data.stress_level,
+        prediction=result["prediction"],
+        action=result["action"],
+        confidence=result["confidence"],
+        reason=result["reason"],
+        triggered_by=user["sub"]
+    )
+
+    db.add(log)
+    db.commit()
+
+    return result
+
+update api\decision_routes.py
+from api.decision_routes import router as decision_router
+
+router.include_router(decision_router)
+
+update the auth\security.py
+from fastapi import Depends, HTTPException
+from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
+from auth.jwt import decode_token
+
+security = HTTPBearer()
+
+def get_current_user(
+    credentials: HTTPAuthorizationCredentials = Depends(security)
+):
+    try:
+        return decode_token(credentials.credentials)
+    except:
+        raise HTTPException(status_code=401, detail="Invalid or expired token")
+
+def admin_only(user=Depends(get_current_user)):
+    if user.get("role") != "admin":
+        raise HTTPException(status_code=403, detail="Admin only")
+    return user
+
+UPDATE YOUR api\decision_routes
+from fastapi import APIRouter, Depends
+from sqlalchemy.orm import Session
+from pydantic import BaseModel
+
+from engine.decision import coordinate
+from auth.security import admin_only
+from db.database import SessionLocal
+from db.models import DecisionLog
+
+router = APIRouter()
+
+class StudentInput(BaseModel):
+    attendance: int
+    internal_marks: int
+    assignments: int
+    study_hours: float
+    backlog_count: int
+    stress_level: int
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
+@router.post("/coordinate")
+def run_coordinate(
+    data: StudentInput,
+    user=Depends(admin_only),
+    db: Session = Depends(get_db)
+):
+    raw = [
+        data.attendance,
+        data.internal_marks,
+        data.assignments,
+        data.study_hours,
+        data.backlog_count,
+        data.stress_level
+    ]
+
+    result = coordinate(raw)
+
+    log = DecisionLog(
+        attendance=data.attendance,
+        internal_marks=data.internal_marks,
+        assignments=data.assignments,
+        study_hours=data.study_hours,
+        backlog_count=data.backlog_count,
+        stress_level=data.stress_level,
+        prediction=result["prediction"],
+        action=result["action"],
+        confidence=result["confidence"],
+        reason=result["reason"],
+        triggered_by=user["sub"]
+    )
+
+    db.add(log)
+    db.commit()
+
+    return result
+
+UPDATE YOUR api\routes.py
+from fastapi import APIRouter
+from api.health import router as health_router
+from api.auth_routes import router as auth_router
+from api.decision_routes import router as decision_router
+
+router = APIRouter()
+
+router.include_router(health_router)
+router.include_router(auth_router)
+router.include_router(decision_router)
