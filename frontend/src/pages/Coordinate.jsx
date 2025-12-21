@@ -5,11 +5,17 @@ export default function Coordinate() {
   const [form, setForm] = useState({});
   const [result, setResult] = useState(null);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   const submit = async () => {
     setLoading(true);
-    const res = await api.post("/coordinate", form);
-    setResult(res.data);
+    setError(null);
+    try {
+      const res = await api.post("/coordinate", form);
+      setResult(res.data);
+    } catch (err) {
+      setError("Execution failed. Check inputs or auth.");
+    }
     setLoading(false);
   };
 
@@ -17,17 +23,29 @@ export default function Coordinate() {
     <div className="page">
       <h2>THE COORDINATE</h2>
 
-      {["attendance","internal_marks","assignments","study_hours","backlog_count","stress_level"].map(k => (
+      {[
+        "attendance",
+        "internal_marks",
+        "assignments",
+        "study_hours",
+        "backlog_count",
+        "stress_level"
+      ].map(k => (
         <input
           key={k}
           placeholder={k}
-          onChange={e => setForm({...form, [k]: Number(e.target.value)})}
+          type="number"
+          onChange={e =>
+            setForm({ ...form, [k]: Number(e.target.value) })
+          }
         />
       ))}
 
-      <button onClick={submit}>
+      <button onClick={submit} disabled={loading}>
         {loading ? "EXECUTING..." : "EXECUTE"}
       </button>
+
+      {error && <p style={{ color: "red" }}>{error}</p>}
 
       {result && (
         <div className="card">

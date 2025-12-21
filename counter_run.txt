@@ -1,0 +1,13 @@
+run this line in terminal while error
+
+copy model\paths_model.pkl model_store\v1.pkl
+
+then
+
+model_store/registry.json
+
+run 
+
+CTRL + C
+python main.py
+

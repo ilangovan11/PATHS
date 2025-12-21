@@ -1,0 +1,135 @@
+==============================
+PATHS — TERMINAL EXECUTION FLOW
+==============================
+
+PHASE 1 — PROJECT INITIALIZATION
+--------------------------------
+mkdir PATHS
+cd PATHS
+
+mkdir data data/raw data/processed model engine api utils core auth db
+
+python -m venv venv
+venv\Scripts\activate
+
+pip install -r requirements.txt
+
+
+PHASE 2 — DATA GENERATION
+-------------------------
+python data/raw/generate_data.py
+
+Purpose:
+Creates a stratified synthetic dataset with controlled noise.
+
+
+PHASE 3 — MODEL TRAINING
+------------------------
+python -m model.trainer
+
+Purpose:
+- Preprocess data
+- Train RandomForest
+- Save model & scaler
+
+
+PHASE 4 — LOCAL MODEL TEST
+--------------------------
+python model/predictor.py
+
+Purpose:
+Verify prediction & confidence output
+
+
+PHASE 5 — DECISION ENGINE TEST
+------------------------------
+python
+from engine.decision import coordinate
+coordinate([45, 70, 65, 3.5, 6, 9])
+
+Purpose:
+Validate rule overrides & reasoning
+
+
+PHASE 6 — DATABASE INITIALIZATION
+---------------------------------
+python main.py
+
+Purpose:
+- Create SQLite tables
+- Start FastAPI backend
+
+
+PHASE 7 — API ACCESS
+--------------------
+http://127.0.0.1:8000/docs
+
+Purpose:
+Swagger UI testing
+
+
+PHASE 8 — FRONTEND SETUP
+------------------------
+npm create vite@latest frontend -- --template react
+cd frontend
+npm install
+npm install axios
+npm run dev
+
+Purpose:
+Launch React dashboard
+
+
+PHASE 9 — LOGIN (ADMIN)
+-----------------------
+Email: admin@paths.io
+Password: admin123
+
+Purpose:
+Obtain JWT token
+
+
+PHASE 10 — EXECUTE COORDINATE
+-----------------------------
+POST /coordinate
+
+Purpose:
+Run ML + rules + logging
+
+
+PHASE 11 — VIEW ANALYTICS
+-------------------------
+GET /analytics/summary
+GET /analytics/confidence
+
+Purpose:
+Admin intelligence reporting
+
+
+PHASE 12 — MODEL RETRAINING
+---------------------------
+POST /model/retrain
+
+Purpose:
+Train new model version & update registry
+
+
+PHASE 13 — ACTIVATE MODEL
+-------------------------
+copy model\paths_model.pkl model_store\v1.pkl
+
+Purpose:
+Initial registry sync
+
+
+PHASE 14 — RESTART SERVER
+-------------------------
+CTRL + C
+python main.py
+
+Purpose:
+Reload services with latest model
+
+==============================
+END OF EXECUTION FLOW
+==============================
