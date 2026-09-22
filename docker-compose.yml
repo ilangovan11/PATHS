@@ -1,17 +1,29 @@
+name: paths
 
 services:
   backend:
     build: ./backend
     ports:
       - "8000:8000"
-    env_file:
-      - ./backend/.env
+    environment:
+      # Runtime paths differ inside the container (WORKDIR /app).
+      DATABASE_URL: sqlite:////app/data/paths.db
+      MODEL_STORE_DIR: /app/model_store
+      # Real deployments should set a strong JWT_SECRET via the shell/env.
+      # The default "change-me" is treated as unset and falls back to an
+      # ephemeral secret (tokens invalidate on restart).
+      JWT_SECRET: ${JWT_SECRET:-change-me}
     volumes:
-      - ./backend/paths.db:/app/paths.db
+      - paths_data:/app/data
 
   frontend:
     build: ./frontend
     ports:
-      - "5173:80"
+      - "8080:80"
+      # The SPA is served on :8080 and /api/* is proxied to the backend by
+      # Nginx, so no CORS is required between the two services.
     depends_on:
       - backend
+
+volumes:
+  paths_data:

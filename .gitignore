@@ -1,0 +1,42 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Environment / secrets
+.env
+.env.local
+*.env
+
+# Node
+node_modules/
+dist/
+dist-ssr/
+*.local
+
+# Runtime databases (regenerated; tracked copies are stale)
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+
+# Logs & temp
+logs/
+*.log
+
+# IDE / OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Backend model artifacts: the versioned store (model_store/vN/) is a tracked
+# product so a fresh clone can serve without retraining. The stale single-file
+# layout (model/paths_model.pkl, model/scaler.pkl, model_store/v1.pkl) is gone.

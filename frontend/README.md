@@ -1,16 +1,41 @@
-# React + Vite
+# PATHS Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+React 19 + Vite dashboard for PATHS (The Coordinate Engine).
 
-Currently, two official plugins are available:
+## Commands
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+```bash
+npm install
+npm run dev      # http://localhost:5173 — dev server + /api proxy → http://127.0.0.1:8000
+npm run lint     # ESLint (0 errors, 0 warnings)
+npm run build    # production build → dist/
+npm run preview  # preview the production build
+```
 
-## React Compiler
+## API base URL
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+The axios client reads `VITE_API_BASE_URL` (see `.env.example`).
 
-## Expanding the ESLint configuration
+- **Dev:** left unset → the client calls `/api/...`, which the Vite dev server proxies to the backend at `http://127.0.0.1:8000`, stripping the `/api` prefix (see `vite.config.js`).
+- **Prod (Docker):** Nginx serves the SPA and applies the same `/api → backend:8000` proxy (see `nginx.conf`), so the page and API share one origin — no CORS needed.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## Pages
+
+| Route | Access | Description |
+|---|---|---|
+| `/login` | public | email + password → JWT |
+| `/` | authenticated | dashboard: model vitals, recent decisions |
+| `/coordinate` | authenticated | evaluate a student profile (submit requires admin) |
+| `/analytics` | authenticated | decision counts, confidence, stress impact |
+| `/model` | authenticated | active model metrics, feature importances, versions |
+| `/model/manage` | admin | retrain / activate model versions |
+
+Auth is handled by `auth/AuthContext.jsx` (token + role persisted in `localStorage`); an axios interceptor attaches the Bearer token and broadcasts a `401` event on expiry. Route guards live in `components/ProtectedRoute.jsx`.
+
+## Styling & charts
+
+No CSS framework and no charting library — a small design system lives in `styles.css`, and the donut/bar charts are custom SVG components (`components/DonutChart.jsx`, `components/BarChart.jsx`).
+
+## Build
+
+Production build (2026-09-22): **299.66 kB** JS, **11.14 kB** CSS — PASS; lint clean — PASS. Verified serving through both the dev proxy and the Docker Nginx proxy (see `FINAL_AUDIT.md`).

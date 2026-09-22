@@ -5,8 +5,7 @@ matplotlib
 fastapi
 uvicorn
 python-dotenv
-fastapi-security
-passlib[bcrypt]
 python-jose
+bcrypt
 sqlalchemy
 joblib

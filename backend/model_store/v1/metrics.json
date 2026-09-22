@@ -1,0 +1,57 @@
+{
+  "accuracy": 0.99,
+  "precision_macro": 0.9885,
+  "recall_macro": 0.9921,
+  "f1_macro": 0.9901,
+  "per_class": {},
+  "confusion_matrix": [
+    [
+      28,
+      0,
+      0
+    ],
+    [
+      1,
+      41,
+      0
+    ],
+    [
+      0,
+      0,
+      30
+    ]
+  ],
+  "class_names": [
+    "ADVANCE",
+    "HOLD",
+    "RETREAT"
+  ],
+  "mean_confidence": 0.9573,
+  "feature_importances": [
+    {
+      "feature": "attendance",
+      "importance": 0.2501
+    },
+    {
+      "feature": "internal_marks",
+      "importance": 0.1756
+    },
+    {
+      "feature": "study_hours",
+      "importance": 0.1699
+    },
+    {
+      "feature": "stress_level",
+      "importance": 0.1567
+    },
+    {
+      "feature": "backlog_count",
+      "importance": 0.146
+    },
+    {
+      "feature": "assignments",
+      "importance": 0.1017
+    }
+  ],
+  "n_samples_eval": 100
+}

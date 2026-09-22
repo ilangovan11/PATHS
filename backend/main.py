@@ -1,9 +1,12 @@
-from api.app import app
-""" from db.database import engine
-from db.models import Base
+"""PATHS backend entry point.
+
+Run:  python main.py        (dev server on 127.0.0.1:8000)
+Deploy: uvicorn api.app:app  (see backend/Dockerfile)
+"""
+
 import uvicorn
 
-Base.metadata.create_all(bind=engine)
+from api.app import app
 
 if __name__ == "__main__":
-    uvicorn.run("api.app:app", host="127.0.0.1", port=8000, reload=True) """
+    uvicorn.run("api.app:app", host="127.0.0.1", port=8000, reload=False)
