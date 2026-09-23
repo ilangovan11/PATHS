@@ -202,6 +202,11 @@ export default function Coordinate() {
                   <div className="decision-hero__meta">
                     model {result.model_version} · predicted {result.prediction}
                   </div>
+                  {result.action !== result.prediction && (
+                    <div className="decision-hero__meta" style={{ color: "var(--danger)", fontWeight: 600 }}>
+                      final action overridden by safety rule
+                    </div>
+                  )}
                 </div>
               </div>
 

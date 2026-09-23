@@ -3,10 +3,17 @@
   "history": [
     {
       "version": "v1",
-      "trained_at": "2026-09-22T08:46:24.071666+00:00",
-      "accuracy": 0.99,
-      "f1_macro": 0.9901,
+      "trained_at": "2026-09-23T05:46:51.877207+00:00",
+      "accuracy": 0.9357,
+      "f1_macro": 0.9366,
       "active": true
+    },
+    {
+      "version": "v2",
+      "trained_at": "2026-09-23T06:48:09.106652+00:00",
+      "accuracy": 0.9357,
+      "f1_macro": 0.9366,
+      "active": false
     }
   ]
 }

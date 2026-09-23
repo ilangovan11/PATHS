@@ -19,6 +19,11 @@ def test_model_status_reflects_trained_model(client, admin_headers):
     assert body["metrics"]["accuracy"] > 0.5
     assert body["metrics"]["f1_macro"] > 0.5
     assert len(body["metrics"]["feature_importances"]) == 6
+    assert set(body["metrics"]["per_class"]) == {"ADVANCE", "HOLD", "RETREAT"}
+    confusion = body["metrics"]["confusion_matrix"]
+    assert len(confusion) == 3 and all(len(r) == 3 for r in confusion)
+    n_expected = body["metrics"]["n_samples_eval"]
+    assert sum(sum(r) for r in confusion) == n_expected
     assert len(body["history"]) >= 1
     assert body["history"][0]["active"] is True
 

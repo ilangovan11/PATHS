@@ -24,7 +24,7 @@ MODEL_CONFIG = {
     "model_type": "RandomForestClassifier",
     "n_estimators": 200,
     "max_depth": 8,
-    "class_weight": {0: 2.5, 1: 1.0, 2: 1.2},
+    "class_weight": None,  # v2 dataset is approximately balanced (30/36/34)
     "random_state": 42,
     "n_jobs": -1,
 }
@@ -37,6 +37,7 @@ TRAIN_TEST_SPLIT = {"test_size": 0.2, "random_state": 42}
 PROMOTION_TOLERANCE = 0.01
 
 DATASET_DESCRIPTION = (
-    "Synthetic student records generated for development/demo. "
-    "Not real-world student data."
+    "Synthetic student records generated for development/demo (v2). Labels are "
+    "derived from a documented latent score (performance minus burden) with "
+    "controlled boundary-only ambiguity. Not real-world student data."
 )

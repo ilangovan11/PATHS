@@ -1,7 +1,7 @@
 {
-  "version": "v1",
+  "version": "v2",
   "model_type": "RandomForestClassifier",
-  "trained_at": "2026-09-23T05:46:51.877207+00:00",
+  "trained_at": "2026-09-23T06:48:09.106652+00:00",
   "features": [
     "attendance",
     "internal_marks",

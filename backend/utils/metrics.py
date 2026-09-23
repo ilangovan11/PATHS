@@ -19,8 +19,20 @@ def evaluate_model(model, X_test, y_test, feature_names, class_names) -> dict:
     preds = model.predict(X_test)
     probs = model.predict_proba(X_test)
 
+    # classification_report keys numeric labels by their string form, so map
+    # each model class id to the configured class name for the report.
     report = classification_report(y_test, preds, output_dict=True, zero_division=0)
+    # Rows = actual class, columns = predicted class.
     confusion = confusion_matrix(y_test, preds).tolist()
+
+    per_class = {}
+    for cls in sorted(model.classes_):
+        rec = report.get(str(int(cls)))
+        if rec is None:
+            continue
+        per_class[class_names[int(cls)]] = {
+            m: round(float(rec[m]), 4) for m in ("precision", "recall", "f1-score", "support")
+        }
 
     feature_importances = [
         {"feature": name, "importance": round(float(imp), 4)}
@@ -33,11 +45,7 @@ def evaluate_model(model, X_test, y_test, feature_names, class_names) -> dict:
         "precision_macro": round(float(precision_score(y_test, preds, average="macro", zero_division=0)), 4),
         "recall_macro": round(float(recall_score(y_test, preds, average="macro", zero_division=0)), 4),
         "f1_macro": round(float(f1_score(y_test, preds, average="macro", zero_division=0)), 4),
-        "per_class": {
-            class_names[int(k)]: {m: round(float(v[m]), 4) for m in ("precision", "recall", "f1-score", "support")}
-            for k, v in report.items()
-            if k in class_names
-        },
+        "per_class": per_class,
         "confusion_matrix": confusion,
         "class_names": list(class_names.values()),
         "mean_confidence": round(float(probs.max(axis=1).mean()), 4),

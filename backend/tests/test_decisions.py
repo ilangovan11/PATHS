@@ -24,6 +24,7 @@ def test_coordinate_healthy_student(client, admin_headers):
     assert body["trace"][-1].startswith("Final action")
     assert len(body["rules_checked"]) == 3
     assert len(body["feature_importances"]) == 6
+    assert body["class_names"] == {"0": "ADVANCE", "1": "HOLD", "2": "RETREAT"}
     for prob in body["probabilities"].values():
         assert 0.0 <= float(prob) <= 1.0
 

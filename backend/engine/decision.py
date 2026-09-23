@@ -5,6 +5,7 @@ version used, class probabilities, and model-level feature importance.
 """
 
 from engine.paths_logic import evaluate_rules
+from model.config import CLASS_NAMES
 from model.predictor import service as prediction_service
 
 
@@ -34,6 +35,7 @@ def coordinate(raw_input) -> dict:
         "reason": reason,
         "model_version": prediction["model_version"],
         "probabilities": prediction["probabilities"],
+        "class_names": {str(k): v for k, v in CLASS_NAMES.items()},
         "rules_checked": rules_checked,
         "trace": trace,
         "feature_importances": prediction_service.feature_importances(),
